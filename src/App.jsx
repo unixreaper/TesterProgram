@@ -163,7 +163,9 @@ export default function App() {
     onDeleteResult, handleConfirmDelete, onEditResult, onSaveResult,
     applyCasePlanLink, toggleChecklist, onSaveChecklist, onEditChecklist, onDeleteChecklist,
     onAddEnv, onDeleteEnv, onAddDevice, onDeleteDevice,
-    onAddModule, onDeleteModule, onUpdateModule, onSaveIdPattern
+    onAddModule, onDeleteModule, onUpdateModule, onSaveIdPattern,
+    onExportExcel, onDownloadImportTemplate, onPickImportFile, onImportTemplateFile, runImport,
+    onCleanupAttachments
   } = useAppHandlers({
     invoke, t, loadAll,
     projects, setProjects, plans, setPlans, cases, setCases, testResults, setTestResults, projectModules, idPattern,
@@ -313,50 +315,6 @@ export default function App() {
   }, [cases, linkForm]);
 
   const canLinkCurrent = useMemo(() => linkForm.caseId && linkForm.planId, [linkForm]);
-
-  async function onExportExcel() {
-    if (!invoke) return;
-    try {
-      const path = await invoke("export_excel_report");
-      setExportStatus(path);
-    } catch (e) { if (!String(e).toLowerCase().includes("cancelled")) console.error(e); }
-  }
-
-  async function onDownloadImportTemplate() {
-    if (!invoke) return;
-    try {
-      const path = await invoke("download_import_template");
-      setImportStatus(`Template saved: ${path}`);
-    } catch (e) { if (!String(e).toLowerCase().includes("cancelled")) console.error(e); }
-  }
-
-  function onPickImportFile() { importInputRef.current?.click(); }
-
-  async function runImport(fileBytes, skipInvalid) {
-    if (!invoke || !fileBytes) return;
-    const summary = await invoke("import_test_cases_from_template", { fileBytes, skipInvalid });
-    setImportErrors(summary.failures || []);
-    setShowImportErrors(Boolean(summary.failures?.length));
-    if (summary.requiresDecision) {
-      setImportDecision({ open: true, fileBytes, summary });
-      setImportStatus(`${summary.successRows}/${summary.totalRows} success (${summary.failedRows} failed)`);
-      return;
-    }
-    setImportDecision({ open: false, fileBytes: null, summary: null });
-    setImportStatus(`${summary.successRows}/${summary.totalRows} success (${summary.failedRows} failed)`);
-    await loadAll();
-  }
-
-  async function onImportTemplateFile(event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const fileBytes = Array.from(new Uint8Array(arrayBuffer));
-      await runImport(fileBytes, false);
-    } catch (e) { console.error(e); }
-  }
 
   function onCaptureShortcut(actionKey, event) {
     event.preventDefault();
