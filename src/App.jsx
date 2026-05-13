@@ -312,6 +312,8 @@ export default function App() {
     return (tc?.linkedPlanIds || []).includes(Number(linkForm.planId)) || false;
   }, [cases, linkForm]);
 
+  const canLinkCurrent = useMemo(() => linkForm.caseId && linkForm.planId, [linkForm]);
+
   async function onExportExcel() {
     if (!invoke) return;
     try {
